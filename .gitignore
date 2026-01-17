@@ -1,0 +1,6 @@
+model/
+*.pkl
+*.joblib
+*.h5
+*.model
+__pycache__/

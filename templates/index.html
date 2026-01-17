@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MoodBeats AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- RESET & BASICS --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        :root {
+            --primary: #00f2ff;
+            --accent: #7000ff;
+            --glass: rgba(20, 20, 35, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --bg-gradient: linear-gradient(135deg, #0a0a12 0%, #1a1a2e 100%);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            color: white;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            padding-bottom: 120px; /* Space for player */
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1 {
+            background: linear-gradient(to right, var(--primary), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            letter-spacing: -1px;
+        }
+
+        p.subtitle {
+            color: #888;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-weight: 300;
+        }
+
+        /* --- LAYOUT GRID --- */
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+            justify-content: center;
+        }
+
+        /* --- GLASS CARDS --- */
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 25px;
+            flex: 1 1 300px; /* Grow to fill, base width 300px */
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+
+        .card:active { transform: scale(0.98); }
+
+        .card-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+            background: rgba(0, 242, 255, 0.1);
+            padding: 15px;
+            border-radius: 50%;
+        }
+
+        h2 { margin: 0 0 10px 0; font-size: 1.5rem; }
+        
+        /* --- INPUTS & BUTTONS --- */
+        select {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            outline: none;
+            appearance: none; /* Removes default arrow */
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3);
+        }
+
+        .btn-scan {
+            background: #ff2e63;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 46, 99, 0.4);
+            display: none; /* Hidden initially */
+        }
+
+        /* --- VIDEO AREA --- */
+        .video-container {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            background: #000;
+            display: none; /* Hidden initially */
+            margin-bottom: 15px;
+            border: 2px solid var(--primary);
+        }
+        
+        video { width: 100%; height: auto; display: block; }
+        
+        .scan-laser {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+            animation: scan 1.5s infinite linear;
+            display: none;
+        }
+
+        @keyframes scan { 0% {top:0%} 100% {top:100%} }
+
+        /* --- FLOATING PLAYER (MOBILE FRIENDLY) --- */
+        .music-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(150%); /* Hidden below screen */
+            width: 90%;
+            max-width: 600px;
+            background: rgba(20, 20, 30, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            z-index: 100;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .music-bar.active {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .album-art {
+            width: 50px;
+            height: 50px;
+            background: var(--bg-gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .track-info { flex-grow: 1; overflow: hidden; }
+        .track-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+        .track-meta { font-size: 0.8rem; color: #aaa; margin: 2px 0 0 0; }
+        
+        .mood-tag {
+            color: var(--primary);
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            border: 1px solid var(--primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 5px;
+        }
+
+        audio { 
+            display: block; 
+            width: 100%; 
+            height: 30px; 
+            margin-top: 5px;
+            filter: invert(1) hue-rotate(180deg); /* Dark mode audio player hack */
+        }
+
+        /* --- LOADING OVERLAY --- */
+        .loader-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 5px solid rgba(255,255,255,0.1);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin { 0% {transform: rotate(0deg)} 100% {transform: rotate(360deg)} }
+
+    </style>
+</head>
+<body>
+
+    <div id="loader" class="loader-overlay">
+        <div class="spinner"></div>
+        <div style="color: white; font-weight: 500;">AI is thinking...</div>
+    </div>
+
+    <h1>MoodBeats</h1>
+    <p class="subtitle">AI-Powered Emotional Music Player</p>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-icon"><i class="fas fa-sliders-h"></i></div>
+            <h2>Manual Mood</h2>
+            <p style="color: #aaa; font-size: 0.9rem; text-align: center;">Select how you feel</p>
+            
+            <form style="width: 100%;">
+                <select id="emotion">
+                    <option value="happy">😄 Happy</option>
+                    <option value="sad">😢 Sad</option>
+                    <option value="energetic">⚡ Energetic</option>
+                    <option value="calm">🧘 Calm</option>
+                </select>
+                <button type="button" class="btn-primary" onclick="fetchMusic(false)">
+                    <i class="fas fa-play"></i> Play Music
+                </button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-icon"><i class="fas fa-robot"></i></div>
+            <h2>AI Face Scan</h2>
+            <p style="color: #aaa; font-size: 0.9rem; text-align: center;">Let AI read your expression</p>
+
+            <div class="video-container" id="videoWrapper">
+                <video id="videoElement" autoplay playsinline muted></video>
+                <div class="scan-laser" id="scanLine"></div>
+            </div>
+            <canvas id="canvas" style="display:none;"></canvas>
+
+            <button type="button" class="btn-primary" id="startCamBtn" onclick="startCamera()">
+                <i class="fas fa-camera"></i> Open Camera
+            </button>
+            <button type="button" class="btn-scan" id="scanBtn" onclick="scanFace()">
+                <i class="fas fa-expand"></i> Analyze & Play
+            </button>
+        </div>
+    </div>
+
+    <div id="musicBar" class="music-bar">
+        <div class="album-art"><i class="fas fa-music"></i></div>
+        <div class="track-info">
+            <p class="track-title" id="songTitle">Waiting...</p>
+            <div class="track-meta">
+                <span id="songLang">--</span> 
+                <span id="moodBadge" class="mood-tag" style="display:none;">--</span>
+            </div>
+            <audio id="audioPlayer" controls>
+                <source src="" type="audio/mpeg">
+            </audio>
+        </div>
+    </div>
+
+    <script>
+        // --- UI ELEMENTS ---
+        const loader = document.getElementById('loader');
+        const musicBar = document.getElementById('musicBar');
+        const video = document.getElementById('videoElement');
+        const videoWrapper = document.getElementById('videoWrapper');
+        const scanLine = document.getElementById('scanLine');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+
+        // --- 1. GENERIC MUSIC FETCH ---
+        function fetchMusic(isAi, imageData = null) {
+            // Show Loader
+            loader.style.display = 'flex';
+            
+            let url = '/get_music';
+            let bodyData;
+            let headers = {};
+
+            if (isAi) {
+                url = '/scan_emotion';
+                bodyData = JSON.stringify({ image: imageData });
+                headers = { 'Content-Type': 'application/json' };
+            } else {
+                const emotion = document.getElementById('emotion').value;
+                const formData = new FormData();
+                formData.append('emotion', emotion);
+                bodyData = formData;
+            }
+
+            fetch(url, { method: 'POST', headers: headers, body: bodyData })
+            .then(response => response.json())
+            .then(data => {
+                loader.style.display = 'none'; // Hide Loader
+                updatePlayer(data);
+            })
+            .catch(error => {
+                loader.style.display = 'none';
+                console.error('Error:', error);
+                alert("Something went wrong. Check console.");
+            });
+        }
+
+        // --- 2. CAMERA LOGIC ---
+        function startCamera() {
+            if (navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }) // prefer front camera on phones
+                    .then(function (stream) {
+                        video.srcObject = stream;
+                        videoWrapper.style.display = 'block';
+                        document.getElementById('startCamBtn').style.display = 'none';
+                        document.getElementById('scanBtn').style.display = 'block';
+                    })
+                    .catch(function (error) {
+                        alert("Camera Error: " + error.message);
+                    });
+            }
+        }
+
+        function scanFace() {
+            scanLine.style.display = 'block'; // Start Laser
+            
+            // Short delay for visual effect
+            setTimeout(() => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+                const dataURL = canvas.toDataURL('image/jpeg');
+                
+                scanLine.style.display = 'none'; // Stop Laser
+                fetchMusic(true, dataURL);
+            }, 800);
+        }
+
+        // --- 3. PLAYER UPDATE ---
+        function updatePlayer(data) {
+            if(data.error) {
+                alert(data.error);
+                return;
+            }
+
+            musicBar.classList.add('active'); // Slide up player
+            
+            document.getElementById('songTitle').innerText = data.title;
+            document.getElementById('songLang').innerText = data.language.toUpperCase();
+            
+            const moodBadge = document.getElementById('moodBadge');
+            const mood = data.detected_mood || document.getElementById('emotion').value;
+            
+            moodBadge.innerText = mood;
+            moodBadge.style.display = 'inline-block';
+
+            const audio = document.getElementById('audioPlayer');
+            audio.src = data.file_url;
+            audio.play();
+        }
+    </script>
+</body>
+</html>
